@@ -38,7 +38,202 @@ const DOMSelectors = {
   spin2:     () => document.getElementById('spin2'),
   fb2:       () => document.getElementById('fb2'),
   btnBack:   () => document.getElementById('btnBack'),
+  langToggle: () => document.getElementById('langToggle'),
 };
+
+/* Internationalization */
+const TRANSLATIONS = {
+  en: {
+    brand_tagline: 'Online services',
+    hero_label: 'Customer area',
+    hero_title: 'Secure access to your accounts',
+    hero_desc: 'View your accounts and make transactions securely.',
+    ticker_label: 'Markets',
+    step_label_1: 'Credentials',
+    step_label_2: '2FA verification',
+    step_label_3: 'Access',
+    form_title: 'Credentials',
+    form_sub: '',
+    iban_label: 'Customer number / IBAN',
+    password_label: 'Password',
+    toggle_pwd_aria: 'Show password',
+    attempts_label: 'Attempts remaining',
+    remember_label: 'Keep me signed in',
+    forgot_link: 'Forgot password?',
+    btn_signin: 'Sign in',
+    device_name: 'Code sent by SMS',
+    device_meta: '+32 ••• ••• •78 — expires in {time}',
+    device_status: 'Active',
+    otp_label: '6-digit code',
+    otp_hint: "Didn't receive a code?",
+    btn_resend: 'Resend',
+    btn_verify: 'Verify',
+    btn_back: '← Back',
+    success_title: 'Identity verified',
+    success_sub: 'Two-factor authentication successful.\nRedirecting to your dashboard…',
+    redirect_label: 'Loading dashboard',
+    footer_legal: 'Legal',
+    feedback: {
+      fillFields: 'Please fill in all fields.',
+      accountLocked: 'Account locked. Contact support: +32 2 000 0000.',
+      invalidCredentials: 'Invalid credentials. {remaining} attempt(s) remaining.',
+      enterOtp: 'Enter the 6-digit code.',
+      incorrectCode: 'Incorrect code. Check your SMS.',
+      newCodeSent: 'New code sent.'
+    }
+  },
+  fr: {
+    brand_tagline: 'Services en ligne',
+    hero_label: 'Espace client',
+    hero_title: 'Accès sécurisé à vos comptes',
+    hero_desc: 'Consultez vos comptes et effectuez des opérations en toute sécurité.',
+    ticker_label: 'Marchés',
+    step_label_1: 'Identifiants',
+    step_label_2: 'Vérification 2FA',
+    step_label_3: 'Accès',
+    form_title: 'Identifiants',
+    form_sub: '',
+    iban_label: 'Numéro client / IBAN',
+    password_label: 'Mot de passe',
+    toggle_pwd_aria: 'Afficher le mot de passe',
+    attempts_label: 'Tentatives restantes',
+    remember_label: 'Rester connecté',
+    forgot_link: 'Mot de passe oublié ?',
+    btn_signin: 'Se connecter',
+    device_name: 'Code envoyé par SMS',
+    device_meta: '+32 ••• ••• •78 — expire dans {time}',
+    device_status: 'Actif',
+    otp_label: 'Code à 6 chiffres',
+    otp_hint: 'Code non reçu ?',
+    btn_resend: 'Renvoyer',
+    btn_verify: 'Vérifier',
+    btn_back: '← Retour',
+    success_title: 'Identité vérifiée',
+    success_sub: "Authentification à deux facteurs réussie.\nRedirection vers votre tableau de bord…",
+    redirect_label: 'Chargement du dashboard',
+    footer_legal: 'Mentions légales',
+    feedback: {
+      fillFields: 'Veuillez remplir tous les champs.',
+      accountLocked: 'Compte bloqué. Contactez le support : +32 2 000 0000.',
+      invalidCredentials: 'Identifiants invalides. Il reste {remaining} tentative(s).',
+      enterOtp: 'Entrez les 6 chiffres du code.',
+      incorrectCode: 'Code incorrect. Vérifiez votre SMS.',
+      newCodeSent: 'Nouveau code envoyé.'
+    }
+  }
+};
+
+let LANG = localStorage.getItem('lang') || 'en';
+
+function t(path) {
+  const parts = path.split('.');
+  let cur = TRANSLATIONS[LANG];
+  for (const p of parts) {
+    if (!cur) return path;
+    cur = cur[p];
+  }
+  return cur ?? path;
+}
+
+function applyTranslations() {
+  // simple mapping of selectors to translation keys
+  const map = [
+    ['.brand-tagline', 'brand_tagline'],
+    ['.hero-label', 'hero_label'],
+    ['.hero-title', 'hero_title'],
+    ['.hero-desc', 'hero_desc'],
+    ['.ticker__label', 'ticker_label'],
+    ['#formTitle', 'form_title'],
+    ['#formSub', 'form_sub'],
+    ['label[for="iban"]', 'iban_label'],
+    ['label[for="password"]', 'password_label'],
+    ['.attempts-bar__label', 'attempts_label'],
+    ['.checkbox-label__text', 'remember_label'],
+    ['.link-muted', 'forgot_link'],
+    ['#btn1Text', 'btn_signin'],
+    ['#btn2Text', 'btn_verify'],
+    ['#btnBack', 'btn_back'],
+    ['.device-card__name', 'device_name'],
+    ['.device-card__status', 'device_status'],
+    ['label.field__label[for="o1"]', 'otp_label'],
+    ['.otp-hint', 'otp_hint'],
+    ['#resendBtn', 'btn_resend'],
+    ['.success-panel__title', 'success_title'],
+    ['.success-panel__sub', 'success_sub'],
+    ['.redirect-label', 'redirect_label'],
+    ['.panel-right__footer a.link-muted', 'footer_legal']
+  ];
+
+  map.forEach(([sel, key]) => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    el.textContent = t(key);
+  });
+
+  // step labels (three nodes)
+  const stepLabels = document.querySelectorAll('.step-node__label');
+  if (stepLabels[0]) stepLabels[0].textContent = t('step_label_1');
+  if (stepLabels[1]) stepLabels[1].textContent = t('step_label_2');
+  if (stepLabels[2]) stepLabels[2].textContent = t('step_label_3');
+
+  // toggle pwd aria
+  const toggle = DOMSelectors.togglePwd();
+  if (toggle) toggle.setAttribute('aria-label', t('toggle_pwd_aria'));
+
+  // device meta (contains time element)
+  const devMeta = document.querySelector('.device-card__meta');
+  if (devMeta) {
+    const timeEl = devMeta.querySelector('#countdown');
+    const timeText = timeEl ? timeEl.textContent : '05:00';
+    devMeta.innerHTML = t('device_meta').replace('{time}', `<time id="countdown">${timeText}</time>`);
+  }
+
+  // update langToggle label (show flag + code)
+  const lt = DOMSelectors.langToggle();
+  if (lt) {
+    lt.innerHTML = LANG === 'en' ? '🇬🇧 EN' : '🇫🇷 FR';
+    lt.setAttribute('aria-label', LANG === 'en' ? 'Switch language to French' : 'Passer en anglais');
+  }
+
+  // update STEP_CONFIG texts so StepManager shows correct language
+  STEP_CONFIG[1].eyebrow = '';
+  STEP_CONFIG[1].title = t('form_title');
+  STEP_CONFIG[1].sub = t('form_sub');
+  STEP_CONFIG[1].badge.text = LANG === 'en' ? 'Security active' : 'Sécurité active';
+
+  STEP_CONFIG[2].eyebrow = LANG === 'en' ? 'Step 2 of 3' : 'Étape 2 sur 3';
+  STEP_CONFIG[2].title = t('step_label_2');
+  STEP_CONFIG[2].sub = LANG === 'en' ? 'Enter the code sent via SMS.' : 'Saisissez le code reçu par SMS.';
+  STEP_CONFIG[2].badge.text = LANG === 'en' ? 'Two-factor authentication' : 'Authentification à deux facteurs';
+
+  STEP_CONFIG[3].eyebrow = LANG === 'en' ? 'Done' : 'Terminé';
+  STEP_CONFIG[3].title = LANG === 'en' ? 'Access granted' : 'Accès accordé';
+  STEP_CONFIG[3].sub = LANG === 'en' ? 'Redirecting…' : 'Redirection en cours…';
+  STEP_CONFIG[3].badge.text = LANG === 'en' ? 'Encrypted session' : 'Session chiffrée';
+}
+
+function setLanguage(lang) {
+  const lt = DOMSelectors.langToggle();
+  const panel = document.querySelector('.panel-right');
+  if (lt) {
+    lt.classList.add('fade-out');
+    if (panel) panel.classList.add('lang-fade');
+    setTimeout(() => {
+      LANG = lang;
+      localStorage.setItem('lang', lang);
+      applyTranslations();
+      // allow browser paint then remove fade classes to show fade-in
+      requestAnimationFrame(() => {
+        lt.classList.remove('fade-out');
+        if (panel) panel.classList.remove('lang-fade');
+      });
+    }, 320);
+  } else {
+    LANG = lang;
+    localStorage.setItem('lang', lang);
+    applyTranslations();
+  }
+}
 
 /* SVG icons */
 const ICON_EYE_OPEN = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
@@ -238,21 +433,21 @@ const AuthService = {
 const STEP_CONFIG = {
   1: {
     eyebrow: '',
-    title:   'Identifiants',
+    title:   'Credentials',
     sub:     '',
     badge:   { text: 'Sécurité active', gold: false },
   },
   2: {
-    eyebrow: 'Étape 2 sur 3',
-    title:   'Vérification',
-    sub:     'Saisissez le code reçu par SMS.',
-    badge:   { text: 'Authentification à deux facteurs', gold: false },
+    eyebrow: 'Step 2 of 3',
+    title:   'Verification',
+    sub:     'Enter the code sent via SMS.',
+    badge:   { text: 'Two-factor authentication', gold: false },
   },
   3: {
-    eyebrow: 'Terminé',
-    title:   'Accès accordé',
-    sub:     'Redirection en cours…',
-    badge:   { text: 'Session chiffrée', gold: true },
+    eyebrow: 'Done',
+    title:   'Access granted',
+    sub:     'Redirecting…',
+    badge:   { text: 'Encrypted session', gold: true },
   },
 };
 
@@ -320,6 +515,13 @@ const App = {
     this._bindStep2();
     this._bindIbanFormat();
     this._bindTogglePassword();
+    // language toggle
+    const lt = DOMSelectors.langToggle();
+    if (lt) {
+      lt.addEventListener('click', () => setLanguage(LANG === 'en' ? 'fr' : 'en'));
+    }
+    // apply initial translations
+    applyTranslations();
   },
 
   /* Étape 1 */
@@ -333,7 +535,7 @@ const App = {
       UIManager.clearFeedback(fb);
 
       if (!iban || !password) {
-        UIManager.setFeedback(fb, 'error', 'Veuillez remplir tous les champs.');
+        UIManager.setFeedback(fb, 'error', t('feedback.fillFields'));
         return;
       }
 
@@ -362,11 +564,11 @@ const App = {
     UIManager.markAttemptUsed(DOMSelectors.attemptDots(), this._attempts - 1);
 
     if (this._attempts >= this.MAX_ATTEMPTS) {
-      UIManager.setFeedback(fb, 'error', 'Compte bloqué. Contactez le support : +32 2 000 0000.');
+      UIManager.setFeedback(fb, 'error', t('feedback.accountLocked'));
       UIManager.disableButton(DOMSelectors.btn1());
     } else {
       const remaining = this.MAX_ATTEMPTS - this._attempts;
-      UIManager.setFeedback(fb, 'error', `Identifiants invalides. ${remaining} tentative(s) restante(s).`);
+      UIManager.setFeedback(fb, 'error', t('feedback.invalidCredentials').replace('{remaining}', remaining));
       DOMSelectors.password().value = '';
     }
   },
@@ -380,7 +582,7 @@ const App = {
       const fb    = DOMSelectors.fb2();
 
       if (!FormValidator.isOtpComplete(boxes)) {
-        UIManager.setFeedback(fb, 'error', 'Entrez les 6 chiffres du code.');
+        UIManager.setFeedback(fb, 'error', t('feedback.enterOtp'));
         return;
       }
 
@@ -400,7 +602,7 @@ const App = {
         Timer.stop();
         StepManager.goTo(3);
       } else {
-        UIManager.setFeedback(fb, 'error', 'Code incorrect. Vérifiez votre SMS.');
+        UIManager.setFeedback(fb, 'error', t('feedback.incorrectCode'));
         OTPHandler.reset();
       }
     });
@@ -412,7 +614,7 @@ const App = {
 
     DOMSelectors.resendBtn().addEventListener('click', () => {
       OTPHandler.reset();
-      UIManager.setFeedback(DOMSelectors.fb2(), 'success', 'Nouveau code envoyé.');
+      UIManager.setFeedback(DOMSelectors.fb2(), 'success', t('feedback.newCodeSent'));
       Timer.start();
     });
   },
@@ -425,7 +627,7 @@ const App = {
     });
   },
 
-  /* Toggle mot de passe */
+  /* Toggle password */
   _bindTogglePassword() {
     DOMSelectors.togglePwd().addEventListener('click', () => {
       UIManager.togglePasswordVisibility(
